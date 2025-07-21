@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional PDF Bill Generator</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0d6efd; --secondary-color: #6c757d; --background-color: #f8f9fa;
+            --card-bg-color: #ffffff; --text-color: #212529; --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.075); --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--background-color); color: var(--text-color); line-height: 1.6; padding: 1rem; }
+        .app-container { max-width: 900px; margin: 0 auto; }
+        .card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px var(--shadow-color); }
+        h1, h2, h3 { margin-bottom: 1rem; }
+        h1 { font-size: 2.5rem; text-align: center; color: var(--primary-color); font-weight: 700; }
+        .brand-section { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; }
+        #pdf-logo-img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid var(--border-color); }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 500; margin-bottom: 0.5rem; }
+        input, select, textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background-color: #fff; color: var(--text-color); font-family: inherit; font-size: 1rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25); }
+        .logo-upload-area { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+        .logo-upload-label { display: inline-block; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: #fff; border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.9rem; }
+        #logo-preview { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); }
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        thead { background-color: #e9ecef; }
+        .text-right { text-align: right; } .auto-calc { font-weight: 500; }
+        .remove-row-btn { background: #dc3545; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 1rem; cursor: pointer; line-height: 28px; text-align: center; }
+        .summary-section { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+        .notes-payment { flex: 1; min-width: 280px; }
+        .totals { width: 100%; max-width: 320px; }
+        .total-row { display: flex; justify-content: space-between; padding: 0.75rem 0; font-size: 1.1rem; }
+        .total-row span:first-child { color: var(--secondary-color); }
+        .grand-total { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); border-top: 2px solid var(--border-color); margin-top: 0.5rem; padding-top: 1rem; }
+        .action-bar { text-align: center; padding: 1.5rem; }
+        .btn { padding: 0.8rem 2rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.1rem; transition: background-color 0.2s, transform 0.1s; }
+        .btn-primary { background-color: var(--primary-color); color: #fff; }
+        .btn-primary:hover { background-color: #0b5ed7; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { background-color: #a0c7f7; cursor: not-allowed; }
+        .btn-secondary { background-color: var(--secondary-color); color: #fff; }
+        .optional-marker { font-size: 0.9em; font-weight: 400; color: var(--secondary-color); }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .summary-section { flex-direction: column-reverse; } .totals { max-width: 100%; } .brand-section { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="bill-to-export">
+            <header class="card">
+                <div class="brand-section">
+                    <img id="pdf-logo-img" src="" alt="Company Logo" style="display: none;">
+                    <h1 id="brand-name-display">Brand Name</h1>
+                </div>
+                <div class="grid-container">
+                    <div class="form-group">
+                        <label for="brand-name">Brand Name</label>
+                        <input type="text" id="brand-name" placeholder="Your Company Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Logo</label>
+                        <div class="logo-upload-area">
+                            <input type="file" id="logo-upload" accept="image/*" style="display: none;">
+                            <label for="logo-upload" class="logo-upload-label">Upload Logo</label>
+                            <img id="logo-preview" src="" alt="Logo Preview" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="owner-name">Owner Name</label>
+                        <input type="text" id="owner-name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="owner-phone">Owner Phone <span class="optional-marker">(Optional)</span></label>
+                        <input type="tel" id="owner-phone" placeholder="+1-234-567-890">
+                    </div>
+                    <div class="form-group">
+                        <label for="support-email">Support Email <span class="optional-marker">(Optional)</span></label>
+                        <input type="email" id="support-email" placeholder="help@yourcompany.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-number">Bill Number</label>
+                        <input type="text" id="bill-number" placeholder="e.g., #0001">
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-date">Date</label>
+                        <input type="date" id="bill-date">
+                    </div>
+                </div>
+            </header>
+
+            <section class="card">
+                <h3>Customer Details <span class="optional-marker">(Optional - for record purposes)</span></h3>
+                <div class="grid-container">
+                    <div class="form-group"><label for="customer-name">Customer Name</label><input type="text" id="customer-name"></div>
+                    <div class="form-group"><label for="customer-phone">Customer Phone</label><input type="tel" id="customer-phone"></div>
+                    <div class="form-group"><label for="customer-address">Customer Address</label><input type="text" id="customer-address"></div>
+                    <div class="form-group"><label for="customer-email">Customer Email</label><input type="email" id="customer-email"></div>
+                </div>
+            </section>
+            
+            <section class="card">
+                <h3>Itemized Bill</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>S.No.</th><th>Item Description</th><th class="text-right">Qty</th><th class="text-right">Unit Cost</th><th class="text-right">Tax (%)</th>
+                                <th class="text-right auto-calc">Tax Amt</th><th class="text-right auto-calc">Total</th><th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="item-list"></tbody>
+                    </table>
+                </div>
+                <button id="add-row-btn" class="btn btn-secondary" style="margin-top: 1rem;">+ Add Item</button>
+            </section>
+
+            <section class="summary-section">
+                <div class="notes-payment card">
+                    <div class="form-group">
+                        <label for="payment-mode">Payment Mode</label>
+                        <select id="payment-mode">
+                            <option value="Cash">Cash</option><option value="Card">Card</option><option value="UPI">UPI</option>
+                            <option value="Wallet">Wallet</option><option value="Net Banking">Net Banking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Additional Notes <span class="optional-marker">(Optional)</span></label>
+                        <textarea id="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="totals card">
+                    <h3>Summary</h3>
+                    <div class="total-row"><span>Subtotal</span><span id="subtotal">0.00</span></div>
+                    <div class="total-row"><span>Total Tax</span><span id="total-tax">0.00</span></div>
+                    <div class="total-row grand-total"><span>Grand Total</span><span id="grand-total">0.00</span></div>
+                </div>
+            </section>
+        </div>
+
+        <div class="action-bar">
+            <button id="generate-pdf-btn" class="btn btn-primary">Generate & Download PDF</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const getEl = (id) => document.getElementById(id);
+
+            const brandNameInput = getEl('brand-name');
+            const brandNameDisplay = getEl('brand-name-display');
+            const logoUploadInput = getEl('logo-upload');
+            const logoPreview = getEl('logo-preview');
+            const pdfLogoImg = getEl('pdf-logo-img');
+            const itemList = getEl('item-list');
+            const addRowBtn = getEl('add-row-btn');
+            const generatePdfBtn = getEl('generate-pdf-btn');
+            const subtotalEl = getEl('subtotal');
+            const totalTaxEl = getEl('total-tax');
+            const grandTotalEl = getEl('grand-total');
+
+            let currencySymbol = '₹';
+            let logoBase64 = null;
+
+            const initializeApp = () => {
+                loadFromLocalStorage();
+                setInitialDate();
+                if(!getEl('bill-number').value) generateBillNumber();
+                addNewRow();
+                setupEventListeners();
+                updateBrandName();
+                updateCalculations();
+            };
+
+            const setupEventListeners = () => {
+                brandNameInput.addEventListener('input', updateBrandName);
+                logoUploadInput.addEventListener('change', handleLogoUpload);
+                addRowBtn.addEventListener('click', addNewRow);
+                itemList.addEventListener('input', handleTableInput);
+                itemList.addEventListener('click', handleTableClick);
+                generatePdfBtn.addEventListener('click', generatePDF);
+                document.querySelector('.app-container').addEventListener('input', saveToLocalStorage);
+            };
+
+            const updateBrandName = () => {
+                brandNameDisplay.textContent = brandNameInput.value || 'Brand Name';
+            };
+
+            const handleLogoUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    logoBase64 = e.target.result;
+                    logoPreview.src = logoBase64;
+                    logoPreview.style.display = 'block';
+                    saveToLocalStorage(); 
+                };
+                reader.onerror = () => { alert('Failed to read file.'); };
+                reader.readAsDataURL(file);
+            };
+
+            const setInitialDate = () => { getEl('bill-date').valueAsDate = new Date(); };
+            const generateBillNumber = () => { getEl('bill-number').value = `INV-${Date.now().toString().slice(-6)}`; };
+
+            const addNewRow = () => {
+                const rowCount = itemList.rows.length;
+                const row = itemList.insertRow(rowCount);
+                
+                row.innerHTML = `
+                    <td class="s-no">${rowCount + 1}</td>
+                    <td><input type="text" placeholder="Item or Service"></td>
+                    <td class="text-right"><input type="number" value="1" min="0" step="any"></td>
+                    <td class="text-right"><input type="number" value="0.00" min="0" step="any"></td>
+                    <td class="text-right"><input type="number" value="0" min="0" step="any"></td>
+                    <td class="text-right auto-calc">0.00</td>
+                    <td class="text-right auto-calc">0.00</td>
+                    <td><button class="remove-row-btn">×</button></td>
+                `;
+                updateCalculations();
+            };
+
+            const handleTableClick = (e) => {
+                if (e.target.classList.contains('remove-row-btn')) {
+                    e.target.closest('tr').remove();
+                    updateSerialNumbers();
+                    updateCalculations();
+                }
+            };
+
+            const handleTableInput = (e) => { if (e.target.type === 'number') updateCalculations(); };
+            
+            const updateSerialNumbers = () => {
+                const rows = itemList.getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    rows[i].cells[0].textContent = i + 1;
+                }
+            };
+
+            const updateCalculations = () => {
+                let subtotal = 0;
+                let totalTax = 0;
+
+                for (let row of itemList.rows) {
+                    const qty = parseFloat(row.cells[2].querySelector('input').value) || 0;
+                    const unitCost = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                    const taxPercent = parseFloat(row.cells[4].querySelector('input').value) || 0;
+
+                    const itemTotalBeforeTax = qty * unitCost;
+                    const taxAmount = itemTotalBeforeTax * (taxPercent / 100);
+                    const itemTotal = itemTotalBeforeTax + taxAmount;
+
+                    row.cells[5].textContent = taxAmount.toFixed(2);
+                    row.cells[6].textContent = itemTotal.toFixed(2);
+                    
+                    subtotal += itemTotalBeforeTax;
+                    totalTax += taxAmount;
+                }
+
+                const grandTotal = subtotal + totalTax;
+
+                subtotalEl.textContent = `${currencySymbol}${subtotal.toFixed(2)}`;
+                totalTaxEl.textContent = `${currencySymbol}${totalTax.toFixed(2)}`;
+                grandTotalEl.textContent = `${currencySymbol}${grandTotal.toFixed(2)}`;
+            };
+
+            const generatePDF = () => {
+                generatePdfBtn.textContent = 'Generating...';
+                generatePdfBtn.disabled = true;
+
+                const element = getEl('bill-to-export');
+                const billNumber = getEl('bill-number').value;
+
+                // Prepare for PDF generation: show logo, hide inputs
+                if (logoBase64) {
+                    pdfLogoImg.src = logoBase64;
+                    pdfLogoImg.style.display = 'block';
+                }
+                const inputs = element.querySelectorAll('input, select, textarea');
+                const values = [];
+                inputs.forEach(input => {
+                    values.push(input.value);
+                    const staticText = document.createElement('span');
+                    if (input.tagName === 'SELECT') {
+                        staticText.textContent = input.options[input.selectedIndex].text;
+                    } else if(input.type === 'date'){
+                        staticText.textContent = new Date(input.value).toLocaleDateString();
+                    } else if (input.type === 'file') {
+                        // Special handling for the file input - just hide its parent area
+                        input.closest('.logo-upload-area')?.style.setProperty('display', 'none', 'important');
+                    }
+                    else {
+                        staticText.textContent = input.value;
+                    }
+                    if(input.id !== 'logo-upload') {
+                       input.style.display = 'none';
+                       input.parentNode.insertBefore(staticText, input);
+                    }
+                });
+                
+                const buttons = element.querySelectorAll('button');
+                buttons.forEach(btn => btn.style.display = 'none');
+                
+                const opt = {
+                    margin: 0.5, filename: `${billNumber}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                
+                html2pdf().from(element).set(opt).save().then(() => {
+                    // Restore form elements after PDF generation
+                    if (logoBase64) pdfLogoImg.style.display = 'none';
+                    inputs.forEach((input, index) => {
+                        if(input.id !== 'logo-upload'){
+                            input.style.display = '';
+                            const staticEl = input.parentNode.querySelector('span');
+                            if(staticEl) staticEl.remove();
+                        } else {
+                            input.closest('.logo-upload-area').style.display = '';
+                        }
+                    });
+                    buttons.forEach(btn => btn.style.display = '');
+                    generatePdfBtn.textContent = 'Generate & Download PDF';
+                    generatePdfBtn.disabled = false;
+                });
+            };
+            
+            const saveToLocalStorage = () => {
+                const items = Array.from(itemList.rows).map(row => ({
+                    desc: row.cells[1].querySelector('input').value,
+                    qty: row.cells[2].querySelector('input').value,
+                    cost: row.cells[3].querySelector('input').value,
+                    tax: row.cells[4].querySelector('input').value,
+                }));
+                const billData = {
+                    brandName: brandNameInput.value,
+                    logoData: logoBase64,
+                    ownerName: getEl('owner-name').value,
+                    ownerPhone: getEl('owner-phone').value,
+                    supportEmail: getEl('support-email').value,
+                    billNumber: getEl('bill-number').value,
+                    billDate: getEl('bill-date').value,
+                    customerName: getEl('customer-name').value,
+                    customerPhone: getEl('customer-phone').value,
+                    customerAddress: getEl('customer-address').value,
+                    customerEmail: getEl('customer-email').value,
+                    items: items,
+                    paymentMode: getEl('payment-mode').value,
+                    notes: getEl('notes').value
+                };
+                localStorage.setItem('billgen-data', JSON.stringify(billData));
+            };
+
+            const loadFromLocalStorage = () => {
+                const savedData = localStorage.getItem('billgen-data');
+                if (!savedData) return;
+
+                const data = JSON.parse(savedData);
+                brandNameInput.value = data.brandName || '';
+                if(data.logoData){
+                    logoBase64 = data.logoData;
+                    logoPreview.src = logoBase64;
+                    logoPreview.style.display = 'block';
+                }
+                getEl('owner-name').value = data.ownerName || '';
+                getEl('owner-phone').value = data.ownerPhone || '';
+                getEl('support-email').value = data.supportEmail || '';
+                getEl('bill-number').value = data.billNumber || '';
+                getEl('bill-date').value = data.billDate || '';
+                getEl('customer-name').value = data.customerName || '';
+                getEl('customer-phone').value = data.customerPhone || '';
+                getEl('customer-address').value = data.customerAddress || '';
+                getEl('customer-email').value = data.customerEmail || '';
+                getEl('payment-mode').value = data.paymentMode || 'Cash';
+                getEl('notes').value = data.notes || '';
+                
+                itemList.innerHTML = '';
+                if (data.items?.length) {
+                    data.items.forEach(item => addNewRowFromData(item));
+                }
+            };
+            
+            const addNewRowFromData = (item) => {
+                addNewRow();
+                const newRow = itemList.rows[itemList.rows.length - 1];
+                newRow.cells[1].querySelector('input').value = item.desc;
+                newRow.cells[2].querySelector('input').value = item.qty;
+                newRow.cells[3].querySelector('input').value = item.cost;
+                newRow.cells[4].querySelector('input').value = item.tax;
+            };
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
